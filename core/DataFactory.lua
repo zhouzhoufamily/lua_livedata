@@ -88,9 +88,12 @@ function DataFactory:doCheckNotifyList()
     local pcall = pcall
     if CC then -- cocos2dx的节点需要检测c++内存中的指针非空
         local isnull = tolua.isnull
-        for _, v in ipairs(self._dataList) do
-            if v[__sig__]._dirtyFlag then
-                for _1, ob in ipairs(v._obList) do
+        local dList = self._dataList
+        local v
+        for i = #dList, 1, -1 do
+            v = dList[i]
+            if v and v[__sig__]._dirtyFlag then -- 避免_dataList被意外插值或删除值, 先判断v非空
+                for _, ob in ipairs(v._obList) do
                     if ob and isnull(ob) then
                         pcall(ob.onLiveUpdate, ob, v)
                     end
