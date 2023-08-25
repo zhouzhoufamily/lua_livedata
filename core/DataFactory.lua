@@ -1,10 +1,13 @@
 ---Name 数据工厂
 ---Date 2023-08-25
 
+local rawget = rawget
 local rawset = rawset
 local ipairs = ipairs
+local type = type
 
-local __sig__ = {}
+-- local __sig_mt__ = {} -- 使用表做键的话, clone深拷贝后的__sig_mt__会指向新表的地址, 这个唯一键就失效了
+local __sig_mt__ = "__sig_mt__" -- 还是指定特殊字符串做键
 
 ---实时数据唯一id
 local s_auto_ldid = 0
@@ -20,20 +23,20 @@ local LiveData = {
     ---@param t LiveData
     ---@param k string
     __index = function(t, k)
-        return t[__sig__][k]
+        return t[__sig_mt__][k]
     end,
     ---set
     ---@param t LiveData
     ---@param k string
     ---@param v any
     __newindex = function(t, k, v)
-        if t[__sig__][k] ~= v then
-            t[__sig__]._dirtyFlag = true
+        if t[__sig_mt__][k] ~= v then
+            t[__sig_mt__]._dirtyFlag = true
             if t._ldsuper then
                 t._ldsuper._dirtyFlag = 1
             end
         end
-        t[__sig__][k] = v
+        t[__sig_mt__][k] = v
         if type(v) == "table" and v._ldid then
             assert(t._ldid < v._ldid, "LiveData has loop refrence")
             rawset(v, "_ldsuper", t)
@@ -63,7 +66,7 @@ function DataFactory:newLiveData(t, name)
     -- data._dirtyFlag = false
     data._obList = {} -- 观察对象列表
     setmetatable(data._obList, { __mode = "v" })
-    data[__sig__] = t
+    data[__sig_mt__] = t
     setmetatable(data, LiveData)
 
     self._dataList[#self._dataList + 1] = data
@@ -92,13 +95,13 @@ function DataFactory:doCheckNotifyList()
         local v
         for i = #dList, 1, -1 do
             v = dList[i]
-            if v and v[__sig__]._dirtyFlag then -- 避免_dataList被意外插值或删除值, 先判断v非空
+            if v and v[__sig_mt__]._dirtyFlag then -- 避免_dataList被意外插值或删除值, 先判断v非空
                 for _, ob in ipairs(v._obList) do
                     if ob and isnull(ob) then
                         pcall(ob.onLiveUpdate, ob, v)
                     end
                 end
-                v[__sig__]._dirtyFlag = nil
+                v[__sig_mt__]._dirtyFlag = nil
             end
         end
     else
@@ -106,13 +109,13 @@ function DataFactory:doCheckNotifyList()
         local v
         for i = #dList, 1, -1 do
             v = dList[i]
-            if v and v[__sig__]._dirtyFlag then -- 避免_dataList被意外插值或删除值, 先判断v非空
+            if v and v[__sig_mt__]._dirtyFlag then -- 避免_dataList被意外插值或删除值, 先判断v非空
                 for _, ob in ipairs(v._obList) do
                     if ob then
                         pcall(ob.onLiveUpdate, ob, v)
                     end
                 end
-                v[__sig__]._dirtyFlag = nil
+                v[__sig_mt__]._dirtyFlag = nil
             end
         end
     end

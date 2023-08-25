@@ -1,5 +1,23 @@
 local DataFactory = require("core.DataFactory")
 
+local function clone(object)
+    local lookup_table = {}
+    local function _copy(object)
+        if type(object) ~= "table" then
+            return object
+        elseif lookup_table[object] then
+            return lookup_table[object]
+        end
+        local newObject = {}
+        lookup_table[object] = newObject
+        for key, value in pairs(object) do
+            newObject[_copy(key)] = _copy(value)
+        end
+        return setmetatable(newObject, getmetatable(object))
+    end
+    return _copy(object)
+end
+
 local function getTime()
     -- return os.time()
     return os.clock()
@@ -160,6 +178,11 @@ local function test_livedata_multi_supper()
     DataFactory:doCheckNotifyList()
 
     -- dc.child = da -- assert LiveData has loop refrence
+
+    print("=====check 3")
+    local dd = clone(dc)
+    dd.value = 2
+    DataFactory:doCheckNotifyList()
 end
 
 ---测试print输出耗时
@@ -172,9 +195,9 @@ end
 
 local function main()
     -- test_print()
-    test_livedata()
+    -- test_livedata()
     -- test_livedata_supper()
-    -- test_livedata_multi_supper()
+    test_livedata_multi_supper()
 end
 
 main()
