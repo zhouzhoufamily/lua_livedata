@@ -143,7 +143,7 @@ local function test_livedata_multi_supper()
     local oba = {
         ---@param data LiveData
         onLiveUpdate = function(sender, data)
-            print(data._ldname)
+            print(data._ldname, data.value)
         end
     }
     DataFactory:bindObserver(oba, da)
@@ -152,7 +152,7 @@ local function test_livedata_multi_supper()
     local obb = {
         ---@param data LiveData
         onLiveUpdate = function(sender, data)
-            print(data._ldname)
+            print(data._ldname, data.value)
         end
     }
     DataFactory:bindObserver(obb, db)
@@ -161,7 +161,7 @@ local function test_livedata_multi_supper()
     local obc = {
         ---@param data LiveData
         onLiveUpdate = function(sender, data)
-            print(data._ldname)
+            print(data._ldname, data.value)
         end
     }
     DataFactory:bindObserver(obc, dc)
@@ -180,8 +180,11 @@ local function test_livedata_multi_supper()
     -- dc.child = da -- assert LiveData has loop refrence
 
     print("=====check 3")
-    local dd = clone(dc)
-    dd.value = 2
+    local dd = DataFactory:newLiveData(clone(dc), "dd") -- 深拷贝出来的数据, 如果要继续监听值变化, 在套一层LiveData数据壳
+    dd.value = "#d"
+
+    DataFactory:bindObserver(obc, dd)
+
     DataFactory:doCheckNotifyList()
 end
 
