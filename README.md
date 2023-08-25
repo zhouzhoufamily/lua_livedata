@@ -31,4 +31,20 @@ DataFactory:doCheckNotifyList()
 -- next
 da.value = 1
 DataFactory:doCheckNotifyList() -- 由于da.value值没有变化, 所以不会通知node.onLiveUpdate
+
+-- 实时数据内 赋值 一个实时数据, 方便数据表嵌套监听
+-- 子级数据
+local db = DataFactory:newLiveData({}, "data_b")
+da.child = db -- da.child的值变更了, 所以只要调用DataFactory:doCheckNotifyList()也是会通知给node.onLiveUpdate的
+
+-- 绑定观察节点
+DataFactory:bindObserver(node, db)
+
+-- 修改子级数据值
+db.value = 1
+DataFactory:doCheckNotifyList() -- 父子级数据da和db都绑定了观察者ob, 且子级数据db变更会向父级传递, 所以会通知node.onLiveUpdate两次
+
+-- 不支持循环引用(判定方式为, 通过自增长的实时数据id, 比较创建的先后顺序, 先创建的不允许为后创建的子级)
+db.parent = da -- assert: LiveData has loop refrence
+
 ```
